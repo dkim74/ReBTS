@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-3">
+        <h3 id='selectedCity'>{{city.name}}</h3>
+        <div id='ddCity' class="dropdown">
+            <button onclick="btCityToggle()" class="dropbtn">Search</button>
+            <div id="cityDropDown" class="dropdown-content">
+                <input type="text" placeholder="Search.." id="inputCity" onkeyup="filterCity()">
+                {% for route in routes %}
+                <a href="javascript:getNationBus({{city.code}},'{{route.routeid}}','{{route.routeno}}');">{{route.routeno}}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <div id='btnRestart'>
+            <button class='dropbtn' onclick='window.location.reload();'>Restart</button>
+        </div>
+    </div>
+    <div class="col">
+        <h3 id="nation_route">Nation Bus Info</h3>
+        <hr>
+        <div id="map" style="width:100%-20px;height:580px;z-index:1200"></div>
+        <hr>
+        <table class="table" id="nation_bus_table"></table>
+        <hr>
+    </div>
+</div>
+<script type = "text/javascript" src = "https://sgisapi.kostat.go.kr/OpenAPI3/auth/javascriptAuth?consumer_key=59973ec4d8a44014b520"></script>
+
+<script type="text/javascript">
+    hiddenButton();
+
+    function hiddenButton() {
+        document.getElementById('btnRestart').style.visibility = 'hidden';
+    }
+
+    function btCityToggle() {
+        document.getElementById("cityDropDown").classList.toggle("show");
+    }
+
+    function filterCity() {
+        var input, filter, ul, li, a, i;
+        input = document.getElementById("inputCity");
+        filter = input.value.toUpperCase();
+        div = document.getElementById("cityDropDown");
+        a = div.getElementsByTagName("a");
+        for (i = 0; i < a.length; i++) {
+            txtValue = a[i].textContent || a[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                a[i].style.display = "";
+            } else {
+                a[i].style.display = "none";
+            }
+        }
+    }
+
+    function getNationBus(city_code, route_id, route_number) {
+        const routeInfo = document.getElementById('nation_route');
+        routeInfo.innerText = 'Route Info - ' + route_number;
+        $("#nation_bus_table tr").remove();
+
+        document.getElementById('ddCity').style.visibility = 'hidden';
+        document.getElementById('btnRestart').style.visibility = 'visible';
+
+        var map = sop.map('map');
+
+        const table = document.getElementById('nation_bus_table');
+        const tHead = ["Number","Type","Destination","GPS-X","GPS-Y"];
+        $.ajax({
+            url: '/get_nation_bus',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken' : '{{ csrf_token }}'
+            },
+            data: {
+                'route_id': route_id,
+                'city_code': city_code
+            },
+            dataType: 'json',
+            success: function(data) {
+                const rowHeader = document.createElement("tr");
+                for(var i = 0; i < tHead.length; i++) {
+                    const header = document.createElement("th");
+                    header.innerText = tHead[i];
+                    rowHeader.appendChild(header);
+                }
+                table.appendChild(rowHeader);
+
+                $.each(data, function(i, item) {
+                    const row = document.createElement("tr");
+                    const cell = [];
+                    for(var i=0; i<tHead.length;i++) {
+                        cell[i] = document.createElement("td");
+                    }
+
+                    cell[0].innerText = item.vehicleno;
+                    row.appendChild(cell[0]);
+                    cell[1].innerText = item.routetp; 
+                    row.appendChild(cell[1]);
+                    cell[2].innerText = item.nodenm;
+                    row.appendChild(cell[2]);
+                    cell[3].innerText = item.gpslong;
+                    row.appendChild(cell[3]);
+                    cell[4].innerText = item.gpslati;
+                    row.appendChild(cell[4]);
+
+                    row.style.border = "thin";
+
+                    table.appendChild(row);
+                    /*
+        var html = "<div style='width:100px;height:100px;z-index:10000;background-color:rgba(255,255,255,0);'>;";
+                         html += "<div style='text-align:center;font-weight:bold;font-size:12px;width:100px;'><img src='./static/img/bus-icon-10.png'>";
+                                       html += item.bus_number + "</div>";
+                                       html += "</div>";
+
+                                       var icon = new sop.DivIcon({html:html,className:"div_icon",iconSize:new sop.Point(7,7),iconAnchor:new sop.Point(6,6),infoWindowAnchor:new sop.Point(1,-5)});
+                     */
+                    var x = parseFloat(item.gpslong);
+                    var y = parseFloat(item.gpslati);
+                    var utmkXY = new sop.LatLng(y, x);
+
+                    console.log(utmkXY.x);
+                    console.log(utmkXY.y);
+
+                    var marker = sop.marker([utmkXY.x, utmkXY.y]);
+                    map.setView(sop.utmk(utmkXY.x, utmkXY.y), 7);
+                    marker.addTo(map).bindInfoWindow(item.vehicleno).openInfoWindow();
+                    //var utmkXYo = new sop.LatLng
+
+                });
+
+            },
+            error: function() {
+                alert('Error');
+            }
+        });
+    }
+</script>
+
+<style>
+.dropbtn {
+    background-color: #04AA6D;
+    color: white;
+    padding: 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+}
+
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #3e8e41;
+}
+
+#myInput {
+    box-sizing: border-box;
+    background-image: url('searchicon.png');
+    background-position: 14px 12px;
+    background-repeat: no-repeat;
+    font-size: 16px;
+    padding: 14px 20px 12px 45px;
+    border: none;
+    border-bottom: 1px solid #ddd;
+}
+
+#myInput:focus {outline: 3px solid #ddd;}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f6f6f6;
+    min-width: 230px;
+    overflow: auto;
+    border: 1px solid #ddd;
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown a:hover {background-color: #ddd;}
+
+.show {display: block;}
+
+table, td, th {
+    border: 1px solid;
+    text-align: center;
+    padding: 5px;
+}
+</style>
+{% endblock %}

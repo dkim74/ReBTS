@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Loading Page</title>
+    <style>
+#spiner
+{
+  position:fixed;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:100%;
+  z-index:9999;
+  /*Change your loading image here*/
+  background: src="/static/img/loading_spinner.gif" 50% 50% no-repeat #ede9df;
+}
+    </style>
+    <!--script>
+      $(window).load(function() {$("#spiner").fadeOut(500);})
+      </script-->
+  </head>
+  <body>
+    <!--div id=spiner></div-->
+    <img src="/static/img/loading_spinner.gif" alt="no image">
+  </body>
+</html>

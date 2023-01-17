@@ -1,0 +1,36 @@
+{% load nvd3_tags %}
+<head>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    {% include_chart_jscss %}
+    {# Jquery CDN : Needed when using jquery_on_ready=True #}
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <!--style>
+    #spiner
+    {
+        position:fixed;
+        left:0px;
+        top:0px;
+        width:100%;
+        height:100%;
+        z-index:9999;
+        /*Change your loading image here*/
+        background: src="/static/img/loading_spinner.gif" 50% 50% no-repeat #ede9df;
+    }
+    </style>
+    <script>
+        $(window).load(function() {$("#spiner").fadeOut(5000);})
+    </script>
+
+    <div id=spiner></div-->
+    {% load_chart charttype chartdata chartcontainer extra %}
+</head>
+<body>
+
+    <!--div class="container"-->
+    <h3>{{title}} {{category}}</h3>
+    <div>
+    {% include_container chartcontainer '90%' '100%' %}
+    </div>
+
+    <script src="/static/js/bootstrap.min.js"></script>
+</body>

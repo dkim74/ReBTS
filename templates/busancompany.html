@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-3">
+        <h3>Busan Bus Company</h3>
+        <div id='busanDropButton' class="dropdown">
+            <button onclick="myFunction()" class="dropbtn">Search</button>
+            <div id="ddBusanCompany" class="dropdown-content">
+                <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">
+                {% for company in companies %}
+                <a href="javascript:getBusanCompany('{{company}}');">{{company}}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <div id='btnRestart'>
+            <button class='dropbtn' onclick='window.location.reload();'>Restart</button>
+        </div>
+    </div>
+    <div class="col">
+        <h3 id="busan_company">Busan Bus Company</h3>
+        <hr>
+        <table class="table" id="busan_company_table"></table>
+        <h3 id='busan_bus'></h3>
+        <div id="map" style="width:100%-20px;height:580px;z-index:1200"></div>
+        <hr>
+        <h3 id="busan_route"></h3>
+        <table class="table" id="busan_bus_table"></table>
+        <hr>
+    </div>
+
+</div>
+<script type="text/javascript" src = "https://sgisapi.kostat.go.kr/OpenAPI3/auth/javascriptAuth?consumer_key=59973ec4d8a44014b520"></script>
+<script type="text/javascript">
+    hiddenButton();
+
+    function hiddenButton() {
+        document.getElementById('btnRestart').style.visibility = 'hidden';
+    }
+
+    function myFunction() {
+        document.getElementById("ddBusanCompany").classList.toggle("show");
+    }
+
+    function filterFunction() {
+        var input, filter, ul, li, a, i;
+        input = document.getElementById("myInput");
+        filter = input.value.toUpperCase();
+        div = document.getElementById("ddBusanCompany");
+        a = div.getElementsByTagName("a");
+        for (i = 0; i < a.length; i++) {
+            txtValue = a[i].textContent || a[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                a[i].style.display = "";
+            } else {
+                a[i].style.display = "none";
+            }
+        }
+    }
+
+    function getBusanCompany(company_name) {
+        const company = document.getElementById('busan_company');
+        company.innerText = company_name;
+        $("#busan_company_table tr").remove();
+
+        document.getElementById('busanDropButton').style.visibility = 'hidden';
+        document.getElementById('btnRestart').style.visibility = 'visible';
+
+        const table = document.getElementById('busan_company_table');
+        const tHead = ['Route','Type','First Stop','Last Stop','Interval'];
+
+        const rowHeader = document.createElement('tr');
+
+        $.ajax({
+            url: 'get_busan_company',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken' : '{{ csrf_token }}'
+            },
+            data: {
+                'message': company_name
+            },
+
+            dataType: 'json',
+            //contentType: 'application/x-www-form-urlencoded; charset=euc-kr',
+            success: function(data) {
+                for(var i = 0; i < tHead.length; i++) {
+                    const header = document.createElement('th');
+                    header.innerText = tHead[i];
+                    rowHeader.appendChild(header);
+                }
+                table.appendChild(rowHeader);
+
+                $.each(data, function(i, item) {
+                    const row = document.createElement('tr');
+                    const cell = [];
+                    for(var i=0; i<tHead.length;i++) {
+                        cell[i] = document.createElement('td');
+                    }
+
+                    const a = document.createElement('a');
+                    a.href = 'javascript:getBusanBus(' + item.lineid + ',' + item.buslinenum + ');';
+                    a.innerText = item.buslinenum;
+                    cell[0].appendChild(a);
+                    row.appendChild(cell[0]);
+                    cell[1].innerText = item.bustype;
+                    row.appendChild(cell[1]);
+                    cell[2].innerText = item.startpoint;
+                    row.appendChild(cell[2]);
+                    cell[3].innerText = item.endpoint;
+                    row.appendChild(cell[3]);
+                    cell[4].innerText = item.headway;
+                    row.appendChild(cell[4]);
+
+                    table.appendChild(row);
+                });
+            },
+            error: function() {
+                alert('Error');
+            }
+        });
+    }
+
+
+    function getBusanBus(route_id, route_name) {
+        const route = document.getElementById('busan_route');
+        route.innerText = 'Bus Route - ' + route_name;
+        $("#busan_bus_table tr").remove();
+
+        var map = sop.map('map');
+
+        const table = document.getElementById('busan_bus_table');
+        const tHead = ["Number","Type","Destination","GPS-X","GPS-Y"];
+        $.ajax({
+            url: 'get_busan_bus',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken' : '{{ csrf_token }}'
+            },
+            data: {
+                'route_id': route_id,
+                'route_name': route_name
+            },
+            dataType: 'json',
+            success: function(data) {
+                const rowHeader = document.createElement("tr");
+                for(var i = 0; i < tHead.length; i++) {
+                    const header = document.createElement("th");
+                    header.innerText = tHead[i];
+                    rowHeader.appendChild(header);
+                }
+                table.appendChild(rowHeader);
+
+                $.each(data, function(i, item) {
+                    const row = document.createElement("tr");
+                    const cell = [];
+                    for(var i=0; i<tHead.length;i++) {
+                        cell[i] = document.createElement("td");
+                    }
+
+                    cell[0].innerText = item.carno;
+                    row.appendChild(cell[0]);
+                    cell[1].innerText = item.lowplate;
+                    row.appendChild(cell[1]);
+                    cell[2].innerText = item.bstopnm;
+                    row.appendChild(cell[2]);
+                    cell[3].innerText = item.lin;
+                    row.appendChild(cell[3]);
+                    cell[4].innerText = item.lat;
+                    row.appendChild(cell[4]);
+
+                    row.style.border = "thin";
+
+                    table.appendChild(row);
+                    /*
+   var html = "<div style='width:100px;height:100px;z-index:10000;background-color:rgba(255,255,255,0);'>;";
+   html += "<div style='text-align:center;font-weight:bold;font-size:12px;width:100px;'><img src='./static/img/bus-icon-10.png'>";
+   html += item.bus_number + "</div>";
+   html += "</div>";
+
+   var icon = new sop.DivIcon({html:html,className:"div_icon",iconSize:new sop.Point(7,7),iconAnchor:new sop.Point(6,6),infoWindowAnchor:new sop.Point(1,-5)});
+                     */
+                    var x = parseFloat(item.lin);
+                    var y = parseFloat(item.lat);
+                    var utmkXY = new sop.LatLng(y, x);
+
+                    console.log(utmkXY.x);
+                    console.log(utmkXY.y);
+
+                    var marker = sop.marker([utmkXY.x, utmkXY.y]);
+                    map.setView(sop.utmk(utmkXY.x, utmkXY.y), 7);
+                    marker.addTo(map).bindInfoWindow(item.carno).openInfoWindow();
+                    //var utmkXYo = new sop.LatLng
+
+                });
+
+            },
+            error: function() {
+                alert('Error');
+            }
+        });
+    }
+</script>
+
+<style>
+.dropbtn {
+    background-color: #04AA6D;
+    color: white;
+    padding: 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+}
+
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #3e8e41;
+}
+
+#myInput {
+    box-sizing: border-box;
+    background-image: url('searchicon.png');
+    background-position: 14px 12px;
+    background-repeat: no-repeat;
+    font-size: 16px;
+    padding: 14px 20px 12px 45px;
+    border: none;
+    border-bottom: 1px solid #ddd;
+}
+
+#myInput:focus {outline: 3px solid #ddd;}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f6f6f6;
+    min-width: 230px;
+    overflow: auto;
+    border: 1px solid #ddd;
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown a:hover {background-color: #ddd;}
+
+.show {display: block;}
+
+table, td, th {
+    border: 1px solid;
+    text-align: center;
+    padding: 5px;
+}
+</style>
+{% endblock %}
+

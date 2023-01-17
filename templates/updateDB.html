@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div>
+    <form method="POST" action="{% url 'updateDB' %}">
+        {% csrf_token %}
+        <button class="send_btn" onclick="get_city_code()" type="button">Update City Code</button>
+    </form>
+</div>
+<div id="div_citycode">Not updated yet</div>
+
+<div>
+    <form method="POST" action="{% url 'updateDB' %}">
+        {% csrf_token %}
+        <button class="send_btn" onclick="get_seoul_route()" type="button">Update Seoul Bus Route</button>
+    </form>
+</div>
+
+<div id="div_seoulroute">Not updated yet</div>
+
+<div>
+    <form method="POST" action="{% url 'updateDB' %}">
+        {% csrf_token %}
+        <button class="send_btn" onclick="get_busan_route()" type="button">Update Busan Bus Route</button>
+    </form>
+</div>
+
+<div id="div_busanroute">Not updated yet</div>
+
+<div>
+    <form method="POST" action="{% url 'updateDB' %}">
+        {% csrf_token %}
+        <button class="send_btn" onclick="get_nation_route()" type="button">Update Nation Bus Route</button>
+    </form>
+</div>
+
+<div id="div_nationroute">Not updated yet</div>
+
+<script>
+    function get_city_code() {
+        var element=document.getElementById('div_citycode');
+        document.all('div_citycode').innerHTML="updating...";
+        $.ajax({
+            url: '/get_city_code',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken' : '{{ csrf_token }}'
+            },
+            data: {
+                "message": "test"
+            },
+            dataType: 'json',
+            success : function(data){
+                console.log("data pass success",data);
+                document.all('div_citycode').innerHTML=data['result'] + " items completed";
+            },
+            error : function() {
+                alert('Error');
+            }
+        });
+    }
+
+    function get_seoul_route() {
+        var element=document.getElementById('div_seoulroute');
+        document.all('div_seoulroute').innerHTML="updating...";
+        $.ajax({
+            url: '/get_seoul_route',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken' : '{{ csrf_token }}'
+            },
+            data: {
+                "message" : "Seoul Route"
+            },
+            dataType: 'json',
+            success: function(data){
+                console.log("data pass success",data);
+                document.all('div_seoulroute').innerHTML=data['result'] + " items completed";
+            },
+            error : function(data) {
+                alert('Error')
+            }
+        });
+    }
+
+    function get_busan_route() {
+        var element=document.getElementById('div_busanroute');
+        document.all('div_busanroute').innerHTML="updating...";
+        $.ajax({
+            url: '/get_busan_route',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken' : '{{ csrf_token }}'
+            },
+            data: {
+                "message" : "Busan Route"
+            },
+            dataType: 'json',
+            success: function(data){
+                console.log("data pass success",data);
+                document.all('div_busanroute').innerHTML=data['result'] + " items completed";
+            },
+            error : function(data) {
+                alert('Error')
+            }
+        });
+    }
+
+    function get_nation_route() {
+        var element=document.getElementById('div_nationroute');
+        document.all('div_nationroute').innerHTML="updating...";
+        $.ajax({
+            url: 'get_nation_route',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken' : '{{ csrf_token }}'
+            },
+            data: {
+                "message" : "Nation Route"
+            },
+            dataType: 'json',
+            success: function(data){
+                console.log("data pass success",data);
+                document.all('div_nationroute').innerHTML=data['result'] + " items completed";
+            },
+            error : function(data) {
+                alert('Error')
+            }
+        });
+    }
+</script>
+{% endblock %}
